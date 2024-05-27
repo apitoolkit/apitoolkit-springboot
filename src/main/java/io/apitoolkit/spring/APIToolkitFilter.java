@@ -45,16 +45,15 @@ import org.springframework.beans.factory.annotation.Value;
 
 @Component
 public class APIToolkitFilter implements Filter {
-
     private Publisher pubsubClient;
     private ClientMetadata clientMetadata;
     @Value("${apitoolkit.debug:false}")
     private Boolean debug;
     @Value("${apitoolkit.redactHeaders:cookies,authorization,x-api-key}")
     private String[] redactHeaders;
-    @Value("${apitoolkit.redactRequestBody:$.password, $.email}")
+    @Value("${apitoolkit.redactRequestBody:$.password,$.email}")
     private String[] redactRequestBody;
-    @Value("${apitoolkit.redactResponseBody:$.password, $.email}")
+    @Value("${apitoolkit.redactResponseBody:$.password,$.email}")
     private String[] redactResponseBody;
     @Value("${apitoolkit.rootUrl:https://app.apitoolkit.io}")
     private String rootUrl;
@@ -142,7 +141,8 @@ public class APIToolkitFilter implements Filter {
         while (headerNames.hasMoreElements()) {
             String headerName = headerNames.nextElement();
             String headerValue = req.getHeader(headerName);
-            if (Arrays.asList(this.redactHeaders).contains(headerName)) {
+            if (Arrays.asList(this.redactHeaders).contains(headerName)
+                    || Arrays.asList(this.redactHeaders).contains(headerName.toLowerCase())) {
                 headerValue = "[CLIENT_REDACTED]";
             }
             reqHeaders.put(headerName, headerValue);
@@ -153,7 +153,8 @@ public class APIToolkitFilter implements Filter {
 
         for (String headerName : headerNames2) {
             String headerValue = res.getHeader(headerName);
-            if (Arrays.asList(this.redactHeaders).contains(headerName)) {
+            if (Arrays.asList(this.redactHeaders).contains(headerName)
+                    || Arrays.asList(this.redactHeaders).contains(headerName.toLowerCase())) {
                 headerValue = "[CLIENT_REDACTED]";
             }
             resHeaders.put(headerName, headerValue);
@@ -237,11 +238,9 @@ public class APIToolkitFilter implements Filter {
             ApiFuture<String> messageIdFuture = this.pubsubClient.publish(pubsubMessage);
             try {
                 String messageId = messageIdFuture.get();
-                if (this.debug) {
-                    System.out.println("Published a message with custom attributes: " + messageId);
-                }
+                System.out.println("Published a message with custom attributes: " + messageId);
             } catch (Exception e) {
-
+                e.printStackTrace();
             }
         }
     }
