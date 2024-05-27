@@ -3,6 +3,7 @@ package io.apitoolkit.spring;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.FilterConfig;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
@@ -15,16 +16,15 @@ import okhttp3.Response;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.ContentCachingRequestWrapper;
-import org.springframework.web.util.ContentCachingResponseWrapper;
-import org.springframework.beans.factory.annotation.Value;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.core.ApiFuture;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.Credentials;
@@ -37,6 +37,11 @@ import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.ProjectTopicName;
 import com.google.pubsub.v1.PubsubMessage;
 import com.jayway.jsonpath.JsonPath;
+
+import org.springframework.web.util.ContentCachingRequestWrapper;
+import org.springframework.web.util.ContentCachingResponseWrapper;
+
+import org.springframework.beans.factory.annotation.Value;
 
 @Component
 public class APIToolkitFilter implements Filter {
@@ -67,7 +72,7 @@ public class APIToolkitFilter implements Filter {
             Credentials credentials;
             credentials = GoogleCredentials.fromStream(
                     new ByteArrayInputStream(jsonStr.getBytes()))
-                    .createScoped("*");
+                    .createScoped();
             ProjectTopicName topicName = ProjectTopicName.of(this.clientMetadata.pubsubProjectId,
                     this.clientMetadata.topicId);
             this.pubsubClient = Publisher.newBuilder(topicName).setCredentialsProvider(
@@ -103,7 +108,6 @@ public class APIToolkitFilter implements Filter {
         cachingResponse.copyBodyToResponse();
         try {
             ByteString payload = buildPayload(duration, req, res, req_body, res_body);
-            System.out.println("Payload: " + payload.toStringUtf8());
             this.publishMessage(payload);
         } catch (Exception e) {
         }
@@ -167,6 +171,11 @@ public class APIToolkitFilter implements Filter {
         byte[] redactedBody = redactJson(req_body,
                 Arrays.asList(this.redactRequestBody));
         byte[] redactedResBody = redactJson(res_body, Arrays.asList(this.redactResponseBody));
+        Date currentDate = new Date();
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        dateFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+        String isoString = dateFormat.format(currentDate);
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("request_headers", reqHeaders);
@@ -182,7 +191,7 @@ public class APIToolkitFilter implements Filter {
         payload.put("project_id", this.clientMetadata.projectId);
         payload.put("proto_major", 1);
         payload.put("proto_minor", 1);
-        payload.put("timestamp", new Date());
+        payload.put("timestamp", isoString);
         payload.put("referer", req.getHeader("referer") == null ? "" : req.getHeader("referer"));
         payload.put("sdk_type", "JavaSpringBoot");
         payload.put("request_body", Base64.getEncoder().encodeToString(redactedBody));
@@ -200,12 +209,9 @@ public class APIToolkitFilter implements Filter {
     }
 
     public static byte[] redactJson(byte[] data, List<String> jsonPaths) {
-        System.out.println(data);
-
         if (jsonPaths == null || jsonPaths.isEmpty() || data.length == 0) {
             return data;
         }
-
         try {
             String jsonData = new String(data, StandardCharsets.UTF_8);
             JsonObject jsonObject = JsonParser.parseString(jsonData).getAsJsonObject();
@@ -221,7 +227,6 @@ public class APIToolkitFilter implements Filter {
             String redactedJson = jsonObject.toString();
             return redactedJson.getBytes(StandardCharsets.UTF_8);
         } catch (Exception e) {
-            System.out.println(data);
             return data; // Return original data on error
         }
     }
@@ -229,7 +234,15 @@ public class APIToolkitFilter implements Filter {
     public void publishMessage(ByteString message) {
         if (this.pubsubClient != null) {
             PubsubMessage pubsubMessage = PubsubMessage.newBuilder().setData(message).build();
-            this.pubsubClient.publish(pubsubMessage);
+            ApiFuture<String> messageIdFuture = this.pubsubClient.publish(pubsubMessage);
+            try {
+                String messageId = messageIdFuture.get();
+                if (this.debug) {
+                    System.out.println("Published a message with custom attributes: " + messageId);
+                }
+            } catch (Exception e) {
+
+            }
         }
     }
 
