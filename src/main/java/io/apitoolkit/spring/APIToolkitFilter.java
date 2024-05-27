@@ -20,7 +20,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import org.springframework.web.servlet.HandlerMapping;
-import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,7 +42,6 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import org.springframework.beans.factory.annotation.Value;
 
-@Component
 public class APIToolkitFilter implements Filter {
     private Publisher pubsubClient;
     private ClientMetadata clientMetadata;
@@ -100,12 +98,13 @@ public class APIToolkitFilter implements Filter {
         long startTime = System.nanoTime();
         chain.doFilter(cachingRequest, cachingResponse);
 
-        long duration = System.nanoTime() - startTime;
-
-        final byte[] req_body = cachingRequest.getContentAsByteArray();
-        final byte[] res_body = cachingResponse.getContentAsByteArray();
-        cachingResponse.copyBodyToResponse();
         try {
+            long duration = System.nanoTime() - startTime;
+
+            final byte[] req_body = cachingRequest.getContentAsByteArray();
+            final byte[] res_body = cachingResponse.getContentAsByteArray();
+            cachingResponse.copyBodyToResponse();
+
             ByteString payload = buildPayload(duration, req, res, req_body, res_body);
             this.publishMessage(payload);
         } catch (Exception e) {
@@ -166,6 +165,7 @@ public class APIToolkitFilter implements Filter {
         String method = req.getMethod();
         String rawUrl = req.getRequestURI() + "?" + req.getQueryString();
         String matchedPattern = (String) req.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+        @SuppressWarnings("unchecked")
         Map<String, String> pathVariables = (Map<String, String>) req
                 .getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
 
