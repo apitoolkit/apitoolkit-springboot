@@ -4,13 +4,13 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.apitoolkit.spring</groupId>
-  <artifactId>apitoolkit-spring</artifactId>
+  <groupId>io.apitoolkit.springboot</groupId>
+  <artifactId>apitoolkit-springboot</artifactId>
   <version>1.0.0</version>
 
-  <name>apitoolkit-spring</name>
+  <name>apitoolkit-springboot</name>
   <description>APItoolkit SDK for spring boot</description>
-	<url>https://github.com/apitoolkit/apitoolkit-spring</url>
+	<url>https://github.com/apitoolkit/apitoolkit-springboot</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -30,6 +30,13 @@
 		<url>https://apitoolkit.io</url>
 	</organization>
 
+<licenses>
+	<license>
+		<name>MIT License</name>
+		<url>http://www.opensource.org/licenses/mit-license.php</url>
+	</license>
+</licenses>
+
 <dependencyManagement>
  <dependencies>
    <dependency>
@@ -43,22 +50,21 @@
 </dependencyManagement>
 
  <scm>
-    <connection>scm:git:git://github.com/apitoolkit/apitoolkit-spring.git</connection>
-    <developerConnection>scm:git:ssh://github.com:apitoolkit/apitoolkit-spring.git</developerConnection>
-    <url>http://github.com/apitoolkit/apitoolkit-spring/tree/master</url>
+    <connection>scm:git:git://github.com/apitoolkit/apitoolkit-springboot.git</connection>
+    <developerConnection>scm:git:ssh://github.com:apitoolkit/apitoolkit-springboot.git</developerConnection>
+    <url>http://github.com/apitoolkit/apitoolkit-springboot/tree/master</url>
   </scm>
 
-	<distributionManagement>
-		<snapshotRepository>
-			<id>ossrh</id>
-			<url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
-		</snapshotRepository>
-		<repository>
-			<id>ossrh</id>
-			<url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2</url>
-		</repository>
-	</distributionManagement>
-
+    <distributionManagement>
+        <repository>
+            <id>central</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+        <snapshotRepository>
+            <id>central</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -104,21 +110,69 @@
   </dependencies>
 
   <build>
-    <pluginManagement>
       <plugins>
-        <plugin>
-          <groupId>org.sonatype.central</groupId>
-          <artifactId>central-publishing-maven-plugin</artifactId>
-          <version>0.4.0</version>
-          <extensions>true</extensions>
-          <configuration>
-             <publishingServerId>central</publishingServerId>
-             <tokenAuth>true</tokenAuth>
-             <autoPublish>true</autoPublish>
-             <waitUntil>published</waitUntil>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>3.2.2</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <keyname>1C883B6E8CEDA7C5F20A5675E124E5A007B15306</keyname>
+                    <gpgArguments>
+                        <argument>--pinentry-mode</argument>
+                        <argument>loopback</argument>
+                    </gpgArguments>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.6.3</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.4.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <autoPublish>true</autoPublish>
+                    <deploymentName>apitoolkit-springboot-1.0.0</deploymentName>
+                    <publishingServerId>central</publishingServerId>
+                    <tokenAuth>true</tokenAuth>
+                </configuration>
+            </plugin>
+        </plugins>
   </build>
 </project>

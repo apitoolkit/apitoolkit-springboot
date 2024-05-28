@@ -1,8 +1,9 @@
-package io.apitoolkit.spring.annotations;
+package io.apitoolkit.springboot.annotations;
 
 import org.springframework.context.annotation.ImportSelector;
 import org.springframework.core.type.AnnotationMetadata;
-import io.apitoolkit.spring.APIToolkitFilter;
+
+import io.apitoolkit.springboot.APIToolkitFilter;
 
 public class APIToolkitImportSelector implements ImportSelector {
     @Override

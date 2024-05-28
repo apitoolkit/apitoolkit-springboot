@@ -1,4 +1,4 @@
-package io.apitoolkit.spring;
+package io.apitoolkit.springboot;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;

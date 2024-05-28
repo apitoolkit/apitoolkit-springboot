@@ -1,4 +1,4 @@
-package io.apitoolkit.spring.annotations;
+package io.apitoolkit.springboot.annotations;
 
 import org.springframework.context.annotation.Import;
 
