@@ -28,13 +28,10 @@ import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.Credentials;
 import com.google.cloud.pubsub.v1.Publisher;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.ProjectTopicName;
 import com.google.pubsub.v1.PubsubMessage;
+import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -108,6 +105,9 @@ public class APIToolkitFilter implements Filter {
             ByteString payload = buildPayload(duration, req, res, req_body, res_body);
             this.publishMessage(payload);
         } catch (Exception e) {
+            if (this.debug) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -163,15 +163,16 @@ public class APIToolkitFilter implements Filter {
 
         Integer statusCode = res.getStatus();
         String method = req.getMethod();
-        String rawUrl = req.getRequestURI() + "?" + req.getQueryString();
+        String queryString = req.getQueryString() == null ? "" : "?" + req.getQueryString();
+        String rawUrl = req.getRequestURI() + queryString;
         String matchedPattern = (String) req.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
         @SuppressWarnings("unchecked")
         Map<String, String> pathVariables = (Map<String, String>) req
                 .getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
 
-        byte[] redactedBody = redactJson(req_body,
+        byte[] redactedBody = this.redactJson(req_body,
                 Arrays.asList(this.redactRequestBody));
-        byte[] redactedResBody = redactJson(res_body, Arrays.asList(this.redactResponseBody));
+        byte[] redactedResBody = this.redactJson(res_body, Arrays.asList(this.redactResponseBody));
         Date currentDate = new Date();
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
@@ -203,32 +204,38 @@ public class APIToolkitFilter implements Filter {
             byte[] jsonBytes = objectMapper.writeValueAsBytes(payload);
             return ByteString.copyFrom(jsonBytes);
         } catch (Exception e) {
-            e.printStackTrace();
+            if (this.debug) {
+                e.printStackTrace();
+            }
             return ByteString.EMPTY;
         }
 
     }
 
-    public static byte[] redactJson(byte[] data, List<String> jsonPaths) {
+    public byte[] redactJson(byte[] data, List<String> jsonPaths) {
         if (jsonPaths == null || jsonPaths.isEmpty() || data.length == 0) {
             return data;
         }
         try {
-            String jsonData = new String(data, StandardCharsets.UTF_8);
-            JsonObject jsonObject = JsonParser.parseString(jsonData).getAsJsonObject();
 
+            String jsonData = new String(data, StandardCharsets.UTF_8);
+            DocumentContext jsonObject = JsonPath.parse(jsonData);
             for (String path : jsonPaths) {
-                JsonArray tokens = JsonPath.read(jsonObject, path);
-                if (tokens != null) {
-                    for (int i = 0; i < tokens.size(); i++) {
-                        tokens.set(i, new JsonPrimitive("[CLIENT_REDACTED]"));
+                try {
+                    jsonObject = jsonObject.set(path, "[CLIENT_REDACTED]");
+                } catch (Exception e) {
+                    if (this.debug) {
+                        e.printStackTrace();
                     }
                 }
             }
-            String redactedJson = jsonObject.toString();
+            String redactedJson = jsonObject.jsonString();
             return redactedJson.getBytes(StandardCharsets.UTF_8);
         } catch (Exception e) {
-            return data; // Return original data on error
+            if (this.debug) {
+                e.printStackTrace();
+            }
+            return data;
         }
     }
 
@@ -238,9 +245,13 @@ public class APIToolkitFilter implements Filter {
             ApiFuture<String> messageIdFuture = this.pubsubClient.publish(pubsubMessage);
             try {
                 String messageId = messageIdFuture.get();
-                System.out.println("Published a message with custom attributes: " + messageId);
+                if (this.debug) {
+                    System.out.println("Published a message with custom attributes: " + messageId);
+                }
             } catch (Exception e) {
-                e.printStackTrace();
+                if (this.debug) {
+                    e.printStackTrace();
+                }
             }
         }
     }
