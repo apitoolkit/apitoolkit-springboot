@@ -167,7 +167,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <autoPublish>true</autoPublish>
-                    <deploymentName>apitoolkit-springboot-1.0.0</deploymentName>
+                    <deploymentName>apitoolkit-springboot-1.0.2</deploymentName>
                     <publishingServerId>central</publishingServerId>
                     <tokenAuth>true</tokenAuth>
                 </configuration>
