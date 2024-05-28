@@ -6,7 +6,7 @@
 
   <groupId>io.apitoolkit.springboot</groupId>
   <artifactId>apitoolkit-springboot</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
 
   <name>apitoolkit-springboot</name>
   <description>APItoolkit SDK for spring boot</description>
@@ -100,7 +100,6 @@
 <dependency>
     <groupId>com.google.auth</groupId>
     <artifactId>google-auth-library-oauth2-http</artifactId>
-    <version>0.26.0</version>
 </dependency>
 <dependency>
     <groupId>com.jayway.jsonpath</groupId>
