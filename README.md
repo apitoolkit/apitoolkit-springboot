@@ -58,3 +58,40 @@ public class DemoApplication {
 	}
 }
 ```
+
+## Error reporting
+
+The Spring Boot SDK includes robust error reporting capabilities. Errors are linked with requests, enabling developers to easily reproduce and resolve bugs. While errors are automatically reported along with requests, you also have the option to manually report errors to APIToolkit.
+
+```java
+package io.apitoolkit.demo;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
+
+import io.apitoolkit.springboot.APErrors;
+import io.apitoolkit.springboot.annotations.EnableAPIToolkit;
+
+@EnableAPIToolkit
+@SpringBootApplication
+public class DemoApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+
+    @GetMapping("/hello")
+    public String hello(@RequestParam(value = "name", defaultValue = "World") String name, HttpServletRequest request) {
+        try {
+            System.out.print(1 / 0);
+        } catch (Exception e) {
+            // Report errors to APIToolkit
+            APErrors.reportError(request, e);
+        }
+        return String.format("Hello %s!", name);
+    }
+}
+
+```
