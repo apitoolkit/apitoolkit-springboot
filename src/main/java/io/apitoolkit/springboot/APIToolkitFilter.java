@@ -89,24 +89,33 @@ public class APIToolkitFilter implements Filter {
 
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
+        List<Map<String, Object>> errors = new ArrayList<>();
 
-        final ContentCachingRequestWrapper cachingRequest = new ContentCachingRequestWrapper(req);
-        final ContentCachingResponseWrapper cachingResponse = new ContentCachingResponseWrapper(res);
+        final ContentCachingRequestWrapper requestCache = new ContentCachingRequestWrapper(req);
+        final ContentCachingResponseWrapper responseCache = new ContentCachingResponseWrapper(res);
+        Integer statusCode = 200;
         long startTime = System.nanoTime();
-        chain.doFilter(cachingRequest, cachingResponse);
-
         try {
-            long duration = System.nanoTime() - startTime;
-
-            final byte[] req_body = cachingRequest.getContentAsByteArray();
-            final byte[] res_body = cachingResponse.getContentAsByteArray();
-            cachingResponse.copyBodyToResponse();
-
-            ByteString payload = buildPayload(duration, req, res, req_body, res_body);
-            this.publishMessage(payload);
+            requestCache.setAttribute("APITOOLKIT_ERRORS", errors);
+            chain.doFilter(requestCache, responseCache);
         } catch (Exception e) {
-            if (this.debug) {
-                e.printStackTrace();
+            statusCode = 500;
+            APErrors.reportError(requestCache, e);
+            throw e;
+        } finally {
+            long duration = System.nanoTime() - startTime;
+            final byte[] req_body = requestCache.getContentAsByteArray();
+            final byte[] res_body = responseCache.getContentAsByteArray();
+            statusCode = statusCode == 500 ? 500 : responseCache.getStatus();
+            responseCache.copyBodyToResponse();
+            try {
+                ByteString payload = buildPayload(duration, requestCache, responseCache, req_body, res_body,
+                        statusCode);
+                this.publishMessage(payload);
+            } catch (Exception e) {
+                if (this.debug) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -132,7 +141,7 @@ public class APIToolkitFilter implements Filter {
     }
 
     public ByteString buildPayload(long duration, HttpServletRequest req, HttpServletResponse res,
-            byte[] req_body, byte[] res_body) {
+            byte[] req_body, byte[] res_body, Integer statusCode) {
         Enumeration<String> headerNames = req.getHeaderNames();
 
         HashMap<String, String> reqHeaders = new HashMap<>();
@@ -161,7 +170,6 @@ public class APIToolkitFilter implements Filter {
 
         Map<String, String[]> params = req.getParameterMap();
 
-        Integer statusCode = res.getStatus();
         String method = req.getMethod();
         String queryString = req.getQueryString() == null ? "" : "?" + req.getQueryString();
         String rawUrl = req.getRequestURI() + queryString;
@@ -178,12 +186,15 @@ public class APIToolkitFilter implements Filter {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         dateFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
         String isoString = dateFormat.format(currentDate);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> errorList = (List<Map<String, Object>>) req.getAttribute("APITOOLKIT_ERRORS");
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("request_headers", reqHeaders);
         payload.put("response_headers", resHeaders);
         payload.put("status_code", statusCode);
         payload.put("method", method);
+        payload.put("errors", errorList);
         payload.put("host", req.getServerName());
         payload.put("raw_url", rawUrl);
         payload.put("duration", duration);
