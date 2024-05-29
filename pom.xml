@@ -6,7 +6,7 @@
 
   <groupId>io.apitoolkit.springboot</groupId>
   <artifactId>apitoolkit-springboot</artifactId>
-  <version>1.0.3</version>
+  <version>1.0.4</version>
 
   <name>apitoolkit-springboot</name>
   <description>APItoolkit SDK for spring boot</description>
@@ -167,7 +167,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <autoPublish>true</autoPublish>
-                    <deploymentName>apitoolkit-springboot-1.0.2</deploymentName>
+                    <deploymentName>apitoolkit-springboot-1.0.4</deploymentName>
                     <publishingServerId>central</publishingServerId>
                     <tokenAuth>true</tokenAuth>
                 </configuration>
