@@ -15,7 +15,6 @@ import okhttp3.Response;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -31,8 +30,6 @@ import com.google.cloud.pubsub.v1.Publisher;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.ProjectTopicName;
 import com.google.pubsub.v1.PubsubMessage;
-import com.jayway.jsonpath.DocumentContext;
-import com.jayway.jsonpath.JsonPath;
 
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
@@ -144,29 +141,23 @@ public class APIToolkitFilter implements Filter {
             byte[] req_body, byte[] res_body, Integer statusCode) {
         Enumeration<String> headerNames = req.getHeaderNames();
 
-        HashMap<String, String> reqHeaders = new HashMap<>();
+        HashMap<String, String> reqHeadersV = new HashMap<>();
 
         while (headerNames.hasMoreElements()) {
             String headerName = headerNames.nextElement();
             String headerValue = req.getHeader(headerName);
-            if (Arrays.asList(this.redactHeaders).contains(headerName)
-                    || Arrays.asList(this.redactHeaders).contains(headerName.toLowerCase())) {
-                headerValue = "[CLIENT_REDACTED]";
-            }
-            reqHeaders.put(headerName, headerValue);
+            reqHeadersV.put(headerName, headerValue);
         }
+        HashMap<String, String> reqHeaders = Utils.redactHeaders(reqHeadersV, Arrays.asList(this.redactHeaders));
 
         HashMap<String, String> resHeaders = new HashMap<>();
-        Collection<String> headerNames2 = res.getHeaderNames();
+        Collection<String> resHeadersV = res.getHeaderNames();
 
-        for (String headerName : headerNames2) {
+        for (String headerName : resHeadersV) {
             String headerValue = res.getHeader(headerName);
-            if (Arrays.asList(this.redactHeaders).contains(headerName)
-                    || Arrays.asList(this.redactHeaders).contains(headerName.toLowerCase())) {
-                headerValue = "[CLIENT_REDACTED]";
-            }
             resHeaders.put(headerName, headerValue);
         }
+        resHeaders = Utils.redactHeaders(resHeaders, Arrays.asList(this.redactHeaders));
 
         Map<String, String[]> params = req.getParameterMap();
 
@@ -178,9 +169,9 @@ public class APIToolkitFilter implements Filter {
         Map<String, String> pathVariables = (Map<String, String>) req
                 .getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
 
-        byte[] redactedBody = this.redactJson(req_body,
-                Arrays.asList(this.redactRequestBody));
-        byte[] redactedResBody = this.redactJson(res_body, Arrays.asList(this.redactResponseBody));
+        byte[] redactedBody = Utils.redactJson(req_body,
+                Arrays.asList(this.redactRequestBody), this.debug);
+        byte[] redactedResBody = Utils.redactJson(res_body, Arrays.asList(this.redactResponseBody), this.debug);
         Date currentDate = new Date();
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
@@ -221,33 +212,6 @@ public class APIToolkitFilter implements Filter {
             return ByteString.EMPTY;
         }
 
-    }
-
-    public byte[] redactJson(byte[] data, List<String> jsonPaths) {
-        if (jsonPaths == null || jsonPaths.isEmpty() || data.length == 0) {
-            return data;
-        }
-        try {
-
-            String jsonData = new String(data, StandardCharsets.UTF_8);
-            DocumentContext jsonObject = JsonPath.parse(jsonData);
-            for (String path : jsonPaths) {
-                try {
-                    jsonObject = jsonObject.set(path, "[CLIENT_REDACTED]");
-                } catch (Exception e) {
-                    if (this.debug) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            String redactedJson = jsonObject.jsonString();
-            return redactedJson.getBytes(StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            if (this.debug) {
-                e.printStackTrace();
-            }
-            return data;
-        }
     }
 
     public void publishMessage(ByteString message) {
