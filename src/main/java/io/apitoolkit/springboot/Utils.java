@@ -9,9 +9,14 @@ import com.jayway.jsonpath.JsonPath;
 
 public class Utils {
 
-    public static HashMap<String, String> redactHeaders(HashMap<String, String> headers, List<String> redactedHeaders) {
-        HashMap<String, String> redactedHeadersMap = new HashMap<>(headers);
-
+    public static HashMap<String, Object> redactHeaders(HashMap<String, Object> headers, List<String> redactedHeaders) {
+        if (headers == null || headers.isEmpty()) {
+            return headers;
+        }
+        HashMap<String, Object> redactedHeadersMap = new HashMap<>(headers);
+        if (redactedHeaders == null || redactedHeaders.isEmpty()) {
+            return headers;
+        }
         for (String headerName : headers.keySet()) {
             if (redactedHeaders.contains(headerName) || redactedHeaders.contains(headerName.toLowerCase())) {
                 redactedHeadersMap.put(headerName, "[CLIENT_REDACTED]");

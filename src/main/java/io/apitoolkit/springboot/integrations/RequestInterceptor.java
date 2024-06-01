@@ -26,9 +26,15 @@ public class RequestInterceptor implements HttpRequestInterceptor {
 
         String uri = request.getRequestLine().getUri();
         List<NameValuePair> queryParams = null;
+        HashMap<String, String> queryParamsMap = new HashMap<>();
+
         if (uri.contains("?")) {
             String queryString = uri.substring(uri.indexOf("?") + 1);
             queryParams = URLEncodedUtils.parse(queryString, StandardCharsets.UTF_8);
+            for (NameValuePair param : queryParams) {
+                queryParamsMap.put(param.getName(), param.getValue());
+            }
+
         }
 
         try {
@@ -59,8 +65,8 @@ public class RequestInterceptor implements HttpRequestInterceptor {
         long startTime = System.nanoTime();
         context.setAttribute("apitoolkit_method", method);
         context.setAttribute("apitoolkit_raw_url", uri);
-        context.setAttribute("start_time", startTime);
-        context.setAttribute("query_params", queryParams);
-        context.setAttribute("apitoolkit_reqbody", requestBody);
+        context.setAttribute("apitoolkit_start_time", startTime);
+        context.setAttribute("apitoolkit_query_params", queryParamsMap);
+        context.setAttribute("apitoolkit_request_body", requestBody);
     }
 }

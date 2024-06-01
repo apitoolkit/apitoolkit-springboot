@@ -94,6 +94,12 @@ public class APIToolkitFilter implements Filter {
         long startTime = System.nanoTime();
         try {
             requestCache.setAttribute("APITOOLKIT_ERRORS", errors);
+            HashMap<String, Object> config = new HashMap<>();
+            config.put("debug", this.debug);
+            config.put("project_id", this.clientMetadata.projectId);
+            requestCache.setAttribute("apitoolkit_config", config);
+            req.setAttribute("apitoolkit_filter", this);
+
             chain.doFilter(requestCache, responseCache);
         } catch (Exception e) {
             statusCode = 500;
@@ -119,7 +125,6 @@ public class APIToolkitFilter implements Filter {
 
     @Override
     public void destroy() {
-        // Cleanup code, if needed
     }
 
     public static class ClientMetadata {
@@ -141,16 +146,16 @@ public class APIToolkitFilter implements Filter {
             byte[] req_body, byte[] res_body, Integer statusCode) {
         Enumeration<String> headerNames = req.getHeaderNames();
 
-        HashMap<String, String> reqHeadersV = new HashMap<>();
+        HashMap<String, Object> reqHeadersV = new HashMap<>();
 
         while (headerNames.hasMoreElements()) {
             String headerName = headerNames.nextElement();
             String headerValue = req.getHeader(headerName);
             reqHeadersV.put(headerName, headerValue);
         }
-        HashMap<String, String> reqHeaders = Utils.redactHeaders(reqHeadersV, Arrays.asList(this.redactHeaders));
+        HashMap<String, Object> reqHeaders = Utils.redactHeaders(reqHeadersV, Arrays.asList(this.redactHeaders));
 
-        HashMap<String, String> resHeaders = new HashMap<>();
+        HashMap<String, Object> resHeaders = new HashMap<>();
         Collection<String> resHeadersV = res.getHeaderNames();
 
         for (String headerName : resHeadersV) {
