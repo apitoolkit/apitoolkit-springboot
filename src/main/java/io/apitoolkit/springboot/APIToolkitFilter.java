@@ -34,26 +34,28 @@ import com.google.pubsub.v1.PubsubMessage;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
-import org.springframework.beans.factory.annotation.Value;
-
 public class APIToolkitFilter implements Filter {
     private Publisher pubsubClient;
     private ClientMetadata clientMetadata;
-    @Value("${apitoolkit.debug:false}")
     private Boolean debug;
-    @Value("${apitoolkit.redactHeaders:cookies,authorization,x-api-key}")
     private String[] redactHeaders;
-    @Value("${apitoolkit.redactRequestBody:$.password,$.email}")
     private String[] redactRequestBody;
-    @Value("${apitoolkit.redactResponseBody:$.password,$.email}")
     private String[] redactResponseBody;
-    @Value("${apitoolkit.rootUrl:https://app.apitoolkit.io}")
     private String rootUrl;
-    @Value("${apitoolkit.apikey}")
     private String apikey;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
+        this.apikey = filterConfig.getInitParameter("apitoolkit.apikey");
+        this.rootUrl = filterConfig.getInitParameter("apitoolkit.rootUrl");
+        String rHeaders = filterConfig.getInitParameter("apitoolkit.redactHeaders");
+        this.redactHeaders = rHeaders != null ? rHeaders.split(",") : null;
+        String req_body = filterConfig.getInitParameter("apitoolkit.redactRequestBody");
+        this.redactRequestBody = req_body != null ? req_body.split(",") : null;
+        String res_body = filterConfig.getInitParameter("apitoolkit.redactResponseBody");
+        this.redactResponseBody = res_body != null ? res_body.split(",") : null;
+        this.debug = Boolean.parseBoolean(filterConfig.getInitParameter("apitoolkit.debug"));
+
         ClientMetadata metadata;
         try {
             metadata = this.getClientMetadata(this.apikey, this.rootUrl);

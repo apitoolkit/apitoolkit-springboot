@@ -1,25 +1,22 @@
 package io.apitoolkit.springboot;
 
+import org.junit.Before;
 import org.junit.Test;
-import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.HashMap;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.util.ContentCachingRequestWrapper;
-import org.springframework.web.util.ContentCachingResponseWrapper;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.FilterConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -38,30 +35,86 @@ public class APIToolkitFilterTest {
     @Mock
     private FilterChain filterChain;
 
+    @Before
+    public void setup() {
+        HashMap<String, String> fConf = new HashMap<>();
+        fConf.put("apitoolkit.debug", "false");
+        fConf.put("apitoolkit.redactHeaders", "cookies,authorization,x-api");
+        fConf.put("apitoolkit.redactRequestBody", "$.password,$.email");
+        fConf.put("apitoolkit.redactResponseBody", "$.password,$.email");
+        fConf.put("apitoolkit.rootUrl", "https://app.apitoolkit.io");
+        fConf.put("apitoolkit.apikey", "z6EYf5FMa3gzzNUfgKZsHjtN9GLETNaev7/v0LkNozFQ89nH");
+        this.filterConfig = fConf;
+    }
+
     @Test
     public void testDoFilter() throws IOException, ServletException, Exception {
         apiToolkitFilter = new APIToolkitFilter();
-        filterConfig = new HashMap<>();
-        filterConfig.put("apitoolkit.debug", "false");
-        filterConfig.put("apitoolkit.redactHeaders", "cookies,authorization,x-api");
-        filterConfig.put("apitoolkit.redactRequestBody", "$.password,$.email");
-        filterConfig.put("apitoolkit.redactResponseBody", "$.password,$.email");
-        filterConfig.put("apitoolkit.rootUrl", "https://app.apitoolkit.io");
-        filterConfig.put("apitoolkit.apikey", "z6EYf5FMa3gzzNUfgKZsHjtN9GLETNaev7/v0LkNozFQ89nH");
-
-        standaloneSetup(new TestController()).addFilter(apiToolkitFilter, "APIToolkitFilter", filterConfig, null, "*")
+        standaloneSetup(new TestController())
+                .addFilter(apiToolkitFilter, "APIToolkitFilter", this.filterConfig, null, "*")
                 .build()
-                .perform(get("/"))
-                .andExpect(status().isOk());
+                .perform(get("/java-test"))
+                .andExpectAll(status().isOk(), header().exists("x-api"), header().string("authorization", "broo"));
+    }
 
+    @Test
+    public void testPostRequestWithBody() throws Exception {
+        apiToolkitFilter = new APIToolkitFilter();
+        String jsonRequestBody = "{\"username\": \"user\", \"password\": \"pass\"}";
+
+        standaloneSetup(new TestController())
+                .addFilter(apiToolkitFilter, "APIToolkitFilter", this.filterConfig, null, "*")
+                .build()
+                .perform(post("/post-test")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpectAll(status().isOk(), header().exists("x-api"), content().string("post received"));
+    }
+
+    @Test
+    public void testPostRequestWithFileResponse() throws Exception {
+        apiToolkitFilter = new APIToolkitFilter();
+
+        MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain",
+                "test content".getBytes(StandardCharsets.UTF_8));
+
+        standaloneSetup(new TestController())
+                .addFilter(apiToolkitFilter, "APIToolkitFilter", this.filterConfig, null, "*")
+                .build()
+                .perform(multipart("/file-upload-test")
+                        .file(file))
+                .andExpectAll(status().isOk(), header().exists("x-api"), content().string("file response content"));
     }
 
     @Controller
     private static class TestController {
-        @GetMapping("/")
-        public String get(HttpServletRequest request) {
-            assertEquals(request.getMethod(), "GET");
+        @GetMapping("/java-test")
+        public String get(HttpServletRequest request, HttpServletResponse response) {
+            assertEquals("GET", request.getMethod());
+            response.addHeader("x-api", "got it");
+            response.addHeader("authorization", "broo");
             return "got it";
+        }
+
+        @PostMapping("/post-test")
+        @ResponseBody
+        public String post(@RequestBody HashMap<String, String> body, HttpServletResponse response) {
+            assertEquals("user", body.get("username"));
+            assertEquals("pass", body.get("password"));
+            response.addHeader("x-api", "post received");
+            return "post received";
+        }
+
+        @PostMapping("/file-upload-test")
+        public void handleFileUpload(@RequestParam("file") MockMultipartFile file, HttpServletResponse response)
+                throws IOException {
+            assertEquals("test.txt", file.getOriginalFilename());
+            assertEquals("text/plain", file.getContentType());
+            assertEquals("test content", new String(file.getBytes(), StandardCharsets.UTF_8));
+            response.addHeader("x-api", "file uploaded");
+            response.setContentType("application/octet-stream");
+            response.setHeader("Content-Disposition", "attachment; filename=\"response.txt\"");
+            response.getOutputStream().write("file response content".getBytes(StandardCharsets.UTF_8));
         }
     }
 }
