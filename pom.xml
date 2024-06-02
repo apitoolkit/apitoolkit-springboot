@@ -7,7 +7,7 @@
 
     <groupId>io.apitoolkit.springboot</groupId>
     <artifactId>apitoolkit-springboot</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
 
     <name>apitoolkit-springboot</name>
     <description>APItoolkit SDK for spring boot</description>

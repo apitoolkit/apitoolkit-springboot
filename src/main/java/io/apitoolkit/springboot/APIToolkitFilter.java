@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.servlet.HandlerMapping;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -37,24 +38,36 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 public class APIToolkitFilter implements Filter {
     private Publisher pubsubClient;
     private ClientMetadata clientMetadata;
+    @Value("${apitoolkit.debug:false}")
     private Boolean debug;
+    @Value("${apitoolkit.redactHeaders:cookies,authorization,x-api-key}")
     private String[] redactHeaders;
+    @Value("${apitoolkit.redactRequestBody:$.password}")
     private String[] redactRequestBody;
+    @Value("${apitoolkit.redactResponseBody:$.password}")
     private String[] redactResponseBody;
+    @Value("${apitoolkit.rootUrl:https://app.apitoolkit.io}")
     private String rootUrl;
+    @Value("${apitoolkit.apikey}")
     private String apikey;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        this.apikey = filterConfig.getInitParameter("apitoolkit.apikey");
-        this.rootUrl = filterConfig.getInitParameter("apitoolkit.rootUrl");
-        String rHeaders = filterConfig.getInitParameter("apitoolkit.redactHeaders");
-        this.redactHeaders = rHeaders != null ? rHeaders.split(",") : null;
-        String req_body = filterConfig.getInitParameter("apitoolkit.redactRequestBody");
-        this.redactRequestBody = req_body != null ? req_body.split(",") : null;
-        String res_body = filterConfig.getInitParameter("apitoolkit.redactResponseBody");
-        this.redactResponseBody = res_body != null ? res_body.split(",") : null;
-        this.debug = Boolean.parseBoolean(filterConfig.getInitParameter("apitoolkit.debug"));
+        // We use filterConfig for testing configurations
+        // The @Value injection is used to set the values in the application.properties
+        // file. The @Value get's inject first, so if apikey is null then we try getting
+        // config from filterConfig.
+        if (this.apikey == null) {
+            this.apikey = filterConfig.getInitParameter("apitoolkit.apikey");
+            this.rootUrl = filterConfig.getInitParameter("apitoolkit.rootUrl");
+            String rHeaders = filterConfig.getInitParameter("apitoolkit.redactHeaders");
+            this.redactHeaders = rHeaders != null ? rHeaders.split(",") : null;
+            String req_body = filterConfig.getInitParameter("apitoolkit.redactRequestBody");
+            this.redactRequestBody = req_body != null ? req_body.split(",") : null;
+            String res_body = filterConfig.getInitParameter("apitoolkit.redactResponseBody");
+            this.redactResponseBody = res_body != null ? res_body.split(",") : null;
+            this.debug = Boolean.parseBoolean(filterConfig.getInitParameter("apitoolkit.debug"));
+        }
 
         ClientMetadata metadata;
         try {
@@ -243,7 +256,6 @@ public class APIToolkitFilter implements Filter {
     }
 
     public ClientMetadata getClientMetadata(String apiKey, String rootUrl) throws IOException {
-        System.out.println("Getting client metadata: " + apiKey);
         String url = "https://app.apitoolkit.io";
         if (rootUrl != null && !rootUrl.isEmpty()) {
             url = rootUrl;
