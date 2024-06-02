@@ -241,8 +241,9 @@ public class APIToolkitFilter implements Filter {
     }
 
     public ClientMetadata getClientMetadata(String apiKey, String rootUrl) throws IOException {
+        System.out.println("Getting client metadata: " + apiKey);
         String url = "https://app.apitoolkit.io";
-        if (!rootUrl.isEmpty()) {
+        if (rootUrl != null && !rootUrl.isEmpty()) {
             url = rootUrl;
         }
         url += "/api/client_metadata";
