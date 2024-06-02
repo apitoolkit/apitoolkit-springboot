@@ -28,6 +28,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class ResponseInterceptor implements HttpResponseInterceptor {
     private HashMap<String, Object> config;
     private APIToolkitFilter apitoolkit;
+    private String parent_id;
     private String project_id;
     private String urlPathPattern;
     private List<String> redactHeaders;
@@ -47,6 +48,7 @@ public class ResponseInterceptor implements HttpResponseInterceptor {
                 this.debug = false;
             }
             this.project_id = (String) config.get("project_id");
+            this.parent_id = (String) req.getAttribute("apitoolkit_message_id");
             this.urlPathPattern = urlPathPattern;
             this.redactHeaders = redactHeaders;
             this.redactResponseBody = redactResponseBody;
@@ -101,17 +103,23 @@ public class ResponseInterceptor implements HttpResponseInterceptor {
                     ? Utils.redactJson(responseBody, this.redactResponseBody, this.debug)
                     : null;
 
+            HashMap<String, Object> pathParams = new HashMap<>();
+            if (this.urlPathPattern != null && this.urlPathPattern.length() > 0) {
+                pathParams = Utils.getPathParamsFromPattern(this.urlPathPattern, rawUrl);
+            }
+            String urlWithoutQuery = rawUrl.split("\\?")[0];
             HashMap<String, Object> payload = new HashMap<>();
-            payload.put("request_headers", requestHeaders);
-            payload.put("response_headers", responseHeaders);
+            payload.put("request_headers", requestHeaders == null ? new HashMap<>() : requestHeaders);
+            payload.put("response_headers", responseHeaders == null ? new HashMap<>() : responseHeaders);
             payload.put("status_code", statusCode);
             payload.put("method", method);
             payload.put("host", host);
+            payload.put("parent_id", this.parent_id);
             payload.put("raw_url", rawUrl);
             payload.put("duration", duration);
-            payload.put("url_path", this.urlPathPattern != null ? this.urlPathPattern : rawUrl);
+            payload.put("url_path", this.urlPathPattern != null ? this.urlPathPattern : urlWithoutQuery);
             payload.put("query_params", queryParams);
-            payload.put("path_params", null);
+            payload.put("path_params", pathParams);
             payload.put("project_id", this.project_id);
             payload.put("proto_major", 1);
             payload.put("proto_minor", 1);

@@ -92,6 +92,8 @@ public class APIToolkitFilter implements Filter {
         final ContentCachingResponseWrapper responseCache = new ContentCachingResponseWrapper(res);
         Integer statusCode = 200;
         long startTime = System.nanoTime();
+        String msgId = UUID.randomUUID().toString();
+
         try {
             requestCache.setAttribute("APITOOLKIT_ERRORS", errors);
             HashMap<String, Object> config = new HashMap<>();
@@ -99,7 +101,7 @@ public class APIToolkitFilter implements Filter {
             config.put("project_id", this.clientMetadata.projectId);
             requestCache.setAttribute("apitoolkit_config", config);
             req.setAttribute("apitoolkit_filter", this);
-
+            req.setAttribute("apitoolkit_message_id", msgId);
             chain.doFilter(requestCache, responseCache);
         } catch (Exception e) {
             statusCode = 500;
@@ -113,7 +115,7 @@ public class APIToolkitFilter implements Filter {
             responseCache.copyBodyToResponse();
             try {
                 ByteString payload = buildPayload(duration, requestCache, responseCache, req_body, res_body,
-                        statusCode);
+                        statusCode, msgId);
                 this.publishMessage(payload);
             } catch (Exception e) {
                 if (this.debug) {
@@ -125,6 +127,7 @@ public class APIToolkitFilter implements Filter {
 
     @Override
     public void destroy() {
+        // Cleanup code, if needed
     }
 
     public static class ClientMetadata {
@@ -143,7 +146,7 @@ public class APIToolkitFilter implements Filter {
     }
 
     public ByteString buildPayload(long duration, HttpServletRequest req, HttpServletResponse res,
-            byte[] req_body, byte[] res_body, Integer statusCode) {
+            byte[] req_body, byte[] res_body, Integer statusCode, String msgid) {
         Enumeration<String> headerNames = req.getHeaderNames();
 
         HashMap<String, Object> reqHeadersV = new HashMap<>();
@@ -200,6 +203,7 @@ public class APIToolkitFilter implements Filter {
         payload.put("project_id", this.clientMetadata.projectId);
         payload.put("proto_major", 1);
         payload.put("proto_minor", 1);
+        payload.put("msg_id", msgid);
         payload.put("timestamp", isoString);
         payload.put("referer", req.getHeader("referer") == null ? "" : req.getHeader("referer"));
         payload.put("sdk_type", "JavaSpringBoot");

@@ -52,4 +52,18 @@ public class Utils {
         }
 
     }
+
+    public static HashMap<String, Object> getPathParamsFromPattern(String pattern, String path) {
+        HashMap<String, Object> pathParams = new HashMap<>();
+        String[] pathParts = path.split("/");
+        for (int i = 0; i < pathParts.length; i++) {
+            String pathPart = pathParts[i];
+            String patternPart = pattern.split("/")[i];
+            if (patternPart.startsWith("{") && patternPart.endsWith("}")) {
+                String paramName = patternPart.substring(1, patternPart.length() - 1);
+                pathParams.put(paramName, pathPart);
+            }
+        }
+        return pathParams;
+    }
 }
