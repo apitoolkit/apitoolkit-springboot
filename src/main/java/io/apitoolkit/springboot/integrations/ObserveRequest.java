@@ -41,4 +41,8 @@ public class ObserveRequest {
                         this.redactRequestBody, this.redactResponseBody))
                 .build();
     }
+
+    public CloseableHttpClient createHttpClient(HttpServletRequest request) {
+        return createHttpClient(request, null);
+    }
 }
