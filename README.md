@@ -1,12 +1,30 @@
-# apitoolkit-springboot
+<div align="center">
 
-## Overview
+![APItoolkit's Logo](https://github.com/apitoolkit/.github/blob/main/images/logo-white.svg?raw=true#gh-dark-mode-only)
+![APItoolkit's Logo](https://github.com/apitoolkit/.github/blob/main/images/logo-black.svg?raw=true#gh-light-mode-only)
 
-The APItoolkit Spring Boot SDK allows seamless integration of APItoolkit with your Spring Boot applications.
+## Springboot SDK
+
+[![APItoolkit SDK](https://img.shields.io/badge/APItoolkit-SDK-0068ff?logo=spring)](https://github.com/topics/apitoolkit-sdk) [![Join Discord Server](https://img.shields.io/badge/Chat-Discord-7289da)](https://discord.gg/dEB6EjQnKB) [![APItoolkit Docs](https://img.shields.io/badge/Read-Docs-0068ff)](https://apitoolkit.io/docs/sdks/java/springboot?utm_source=github-sdk) 
+
+APItoolkit is an end-to-end API and web services management toolkit for engineers and customer support teams. To integrate your Springboot Java application with APItoolkit, you need to use this SDK to monitor incoming traffic, aggregate the requests, and then deliver them to the APItoolkit's servers.
+
+</div>
+
+---
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Contributing and Help](#contributing-and-help)
+- [License](#license)
+
+---
 
 ## Installation
 
-To install the APItoolkit Spring Boot SDK, add the following dependency to your `pom.xml` file within the `<dependencies>` section:
+To install the SDK, kindly add the following dependency to your `pom.xml` file within the `<dependencies>` section like so:
 
 ```xml
 <dependency>
@@ -18,32 +36,35 @@ To install the APItoolkit Spring Boot SDK, add the following dependency to your 
 
 ## Configuration
 
-Before integrating APItoolkit, add your APItoolkit `API_KEY` to the `application.properties` file as shown below:
+First, add your APItoolkit API key to the `application.properties` file like so:
 
 ```sh
-apitoolkit.apikey=<YOUR_API_KEY>
+apitoolkit.apikey={ENTER_YOUR_API_KEY_HERE};
 
-## Other configuation options
+# Other configuation options
 apitoolkit.debug=false # Set to true to enable debug mode
-apitoolkit.redactHeaders=Authorization,Cookie,accept,accept-encoding # list of headers to redact
-apitoolkit.redactRequestBody=$.password,$.account_number # jsonpath list of request body fields to redact
-apitoolkit.redactResponseBody=$.cvv,$.email # jsonpath list of response body fields to redact
+# ...
 ```
 
-## Integration
+> [!NOTE]
+> 
+> The `{ENTER_YOUR_API_KEY_HERE}` demo string should be replaced with the [API key](https://apitoolkit.io/docs/dashboard/settings-pages/api-keys?utm_source=github-sdk) generated from the APItoolkit dashboard.
 
-After installing the SDK and configuring the properties for your application, integrate APItoolkit into your Spring Boot server as follows:
+<br />
+
+Then, initialize the SDK like so:
 
 ```java
 package com.example.demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+// Import APItoolkit annotation
 import io.apitoolkit.springboot.annotations.EnableAPIToolkit;
-
 import org.springframework.web.bind.annotation.*;
 
 @SpringBootApplication
+// Class declaration for the annotation
 @EnableAPIToolkit
 @RestController
 public class DemoApplication {
@@ -59,107 +80,27 @@ public class DemoApplication {
 }
 ```
 
-## Error reporting
+<br />
 
-The Spring Boot SDK includes robust error reporting capabilities. Errors are linked with requests, enabling developers to easily reproduce and resolve bugs. While errors are automatically reported along with requests, you also have the option to manually report errors to APIToolkit.
+> [!IMPORTANT]
+> 
+> To learn more configuration options (redacting fields, error reporting, outgoing requests, etc.), please read this [SDK documentation](https://apitoolkit.io/docs/sdks/java/springboot?utm_source=github-sdk).
 
-```java
-package io.apitoolkit.demo;
+## Contributing and Help
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.*;
-import jakarta.servlet.http.HttpServletRequest;
+To contribute to the development of this SDK or request help from the community and our team, kindly do any of the following:
+- Read our [Contributors Guide](https://github.com/apitoolkit/.github/blob/main/CONTRIBUTING.md).
+- Join our community [Discord Server](https://discord.gg/dEB6EjQnKB).
+- Create a [new issue](https://github.com/apitoolkit/apitoolkit-dotnet/issues/new/choose) in this repository.
 
-import io.apitoolkit.springboot.APErrors;
-import io.apitoolkit.springboot.annotations.EnableAPIToolkit;
+## License
 
-@EnableAPIToolkit
-@SpringBootApplication
-public class DemoApplication {
+This repository is published under the [MIT](LICENSE) license.
 
-    public static void main(String[] args) {
-        SpringApplication.run(DemoApplication.class, args);
-    }
+---
 
-    @GetMapping("/hello")
-    public String hello(@RequestParam(value = "name", defaultValue = "World") String name, HttpServletRequest request) {
-        try {
-            System.out.print(1 / 0);
-        } catch (Exception e) {
-            // Report errors to APIToolkit
-            APErrors.reportError(request, e);
-        }
-        return String.format("Hello %s!", name);
-    }
-}
+<div align="center">
+    
+<a href="https://apitoolkit.io?utm_source=apitoolkit_github_dotnetsdk" target="_blank" rel="noopener noreferrer"><img src="https://github.com/apitoolkit/.github/blob/main/images/icon.png?raw=true" width="40" /></a>
 
-```
-
-## Outgoing Requests Monitoring
-
-Monitoring outgoing requests helps identify and troubleshoot performance issues effectively. The Spring Boot SDK provides the `ObserveRequest` class for monitoring outgoing requests using the Apache HTTP client. This guide will walk you through setting it up and using it in your application.
-
-### Step 1: Create an Instance of `ObserveRequest`
-
-First, create an instance of the `ObserveRequest` class. You can pass optional parameters to redact headers and JSONPath expressions to redact parts of the request and response bodies before they are sent to APIToolkit.
-
-```java
-ObserveRequest observingClient = new ObserveRequest(
-    List.of("cookies", "authorization"),
-    List.of("$.title", "$.id"),
-    List.of("$.body")
-);
-```
-
-### Step 2: Use `ObserveRequest` to Create an HTTP Client
-
-Use the `observingClient` to create a new HTTP client. Pass the current request context and an optional path pattern if the route has dynamic parameters. This setup allows you to monitor HTTP calls made within your server, linking them to the incoming requests that triggered them in the APIToolkit log explorer.
-
-### Full Example of Outgoing Request Monitoring
-
-Below is a complete example demonstrating how to set up and use `ObserveRequest` in a Spring Boot application.
-
-```java
-package com.example.demo;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
-
-@SpringBootApplication
-@EnableAPIToolkit
-@RestController
-public class DemoApplication {
-
-    public static void main(String[] args) {
-        SpringApplication.run(DemoApplication.class, args);
-    }
-
-    private ObserveRequest observingClient = new ObserveRequest(
-        List.of("cookies", "authorization", "x-api-key"),
-        List.of("$.title", "$.id"),
-        List.of("$.body")
-    );
-
-    @GetMapping("/hello")
-    public String hello(HttpServletRequest request) {
-        CloseableHttpClient httpClient = observingClient.createHttpClient(request, "/posts/{post_id}");
-        try {
-            HttpGet httpGet = new HttpGet("https://jsonplaceholder.typicode.com/posts/1");
-            CloseableHttpResponse response = httpClient.execute(httpGet);
-            String responseStr = EntityUtils.toString(response.getEntity());
-            return responseStr;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "Error occurred while processing the request";
-        }
-    }
-}
-```
+</div>
