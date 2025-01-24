@@ -37,13 +37,13 @@ public class APIToolkitFilter implements Filter {
     private String[] redactRequestBody;
     @Value("${apitoolkit.redactResponseBody:")
     private String[] redactResponseBody;
-    @Value("${apitoolkit.capture_request_body:false}")
+    @Value("${apitoolkit.captureRequest_body:false}")
     private Boolean captureRequestBody;
-    @Value("${apitoolkit.capture_response_body:false}")
+    @Value("${apitoolkit.captureResponse_body:false}")
     private Boolean captureResponseBody;
-    @Value("${apitoolkit.service_name:}")
+    @Value("${apitoolkit.serviceName:}")
     private String serviceName;
-    @Value("${apitoolkit.service_version:}")
+    @Value("${apitoolkit.serviceVersion:}")
     private String serviceVersion;
     @Value("${apitoolkit.tags:}")
     private String tags;

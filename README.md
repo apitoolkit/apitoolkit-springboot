@@ -7,7 +7,7 @@
 
 [![APItoolkit SDK](https://img.shields.io/badge/APItoolkit-SDK-0068ff?logo=spring)](https://github.com/topics/apitoolkit-sdk) [![Join Discord Server](https://img.shields.io/badge/Chat-Discord-7289da)](https://apitoolkit.io/discord?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme) [![APItoolkit Docs](https://img.shields.io/badge/Read-Docs-0068ff)](https://apitoolkit.io/docs/sdks/java/springboot?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme)
 
-APItoolkit is an end-to-end API and web services management toolkit for engineers and customer support teams. To integrate your Springboot Java application with APItoolkit, you need to use this SDK to monitor incoming traffic, aggregate the requests, and then deliver them to the APItoolkit's servers.
+APIToolkit Springboot SKD is a middleware that can be used to monitor HTTP requests. It is provides additional functionalities on top of the open telemetry instrumentation which creates a custom span for each request capturing details about the request including request and response bodies.
 
 </div>
 
@@ -16,7 +16,8 @@ APItoolkit is an end-to-end API and web services management toolkit for engineer
 ## Table of Contents
 
 - [Installation](#installation)
-- [Configuration](#configuration)
+- [Setup Open Telemetry](#setup-open-telemetry)
+- [Configuration](#apitoolkit-sdk-Configuration)
 - [Contributing and Help](#contributing-and-help)
 - [License](#license)
 
@@ -30,19 +31,46 @@ To install the SDK, kindly add the following dependency to your `pom.xml` file w
 <dependency>
     <groupId>io.apitoolkit.springboot</groupId>
     <artifactId>apitoolkit-springboot</artifactId>
-    <version>1.0.6</version>
+    <version>2.0.9</version>
 </dependency>
 ```
 
-## Configuration
+## Setup Open Telemetry
 
-First, add your APItoolkit API key to the `application.properties` file like so:
+Setting up open telemetry allows you to send traces, metrics and logs to the APIToolkit platform.
+To setup open telemetry, you need to install the opentelemetry-javaagent.jar file.
 
 ```sh
-apitoolkit.apikey={ENTER_YOUR_API_KEY_HERE};
+curl -L -O https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
+```
 
-# Other configuation options
-apitoolkit.debug=false
+### Setup Open Telemetry Variables
+
+The environment variables include your API key and the endpoint to send the data to, this allows you to send data to the APIToolkit platform.
+
+```sh
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://otelcol.apitoolkit.io:4317"
+export OTEL_SERVICE_NAME="my-service" # Specifies the name of the service.
+export OTEL_RESOURCE_ATTRIBUTES=at-project-key="{ENTER_YOUR_API_KEY_HERE}" # Adds your API KEY to the resource.
+export OTEL_EXPORTER_OTLP_PROTOCOL="grpc" #Specifies the protocol to use for the OpenTelemetry exporter.
+```
+
+JAVA_TOOL_OPTIONS="-javaagent:PATH/TO/opentelemetry-javaagent.jar"
+You can then run the application with opentelemetry instrumented using the following command:
+
+```sh
+java -javaagent:<PATH-TO>/opentelemetry-javaagent.jar -jar target/your_app.jar
+```
+
+## APItoolkit SDK Configuration
+
+The apitoolkit sdk can be configured using the following optional properties:
+
+```sh
+apitoolkit.captureRequestBody=true
+apitoolkit.captureResponseBody=true
+apitoolkit.serviceName=my-service
+
 # ...
 ```
 
@@ -72,7 +100,6 @@ public class DemoApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(DemoApplication.class, args);
 	}
-
 	@GetMapping("/greet/{name}")
 	public String getUser(@PathVariable String name) {
 		return "Hello, " + name;
