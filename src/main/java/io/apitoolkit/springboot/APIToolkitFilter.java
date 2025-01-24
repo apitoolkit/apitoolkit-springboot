@@ -121,8 +121,8 @@ public class APIToolkitFilter implements Filter {
             APErrors.reportError(requestCache, e);
             throw e;
         } finally {
-            final byte[] req_body = requestCache.getContentAsByteArray();
-            final byte[] res_body = responseCache.getContentAsByteArray();
+            final byte[] req_body = this.captureRequestBody ? requestCache.getContentAsByteArray() : "".getBytes();
+            final byte[] res_body = this.captureResponseBody ? responseCache.getContentAsByteArray() : "".getBytes();
             statusCode = statusCode == 500 ? 500 : responseCache.getStatus();
             responseCache.copyBodyToResponse();
             try {
@@ -182,8 +182,6 @@ public class APIToolkitFilter implements Filter {
         config.put("redactHeaders", this.redactHeaders);
         config.put("redactRequestBody", this.redactRequestBody);
         config.put("redactResponseBody", this.redactResponseBody);
-        config.put("captureRequestBody", this.captureRequestBody);
-        config.put("captureResponseBody", this.captureResponseBody);
 
         Utils.setApitoolkitAttributesAndEndSpan(
                 span,

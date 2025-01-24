@@ -37,9 +37,9 @@ public class Utils {
             String parentId) {
         try {
 
-            List<String> redactRequestBody = (List<String>) config.getOrDefault("redact_request_body", List.of());
-            List<String> redactResponseBody = (List<String>) config.getOrDefault("redact_response_body", List.of());
-            List<String> redactHeaders = (List<String>) config.getOrDefault("redact_headers", List.of());
+            List<String> redactRequestBody = (List<String>) config.getOrDefault("redactRequestBody", List.of());
+            List<String> redactResponseBody = (List<String>) config.getOrDefault("redactResponseBody", List.of());
+            List<String> redactHeaders = (List<String>) config.getOrDefault("redactHeaders", List.of());
             Boolean debug = (Boolean) config.getOrDefault("debug", false);
             String encodedRequestBody = Base64.getEncoder()
                     .encodeToString(redactFields(reqBody, redactRequestBody, debug));
