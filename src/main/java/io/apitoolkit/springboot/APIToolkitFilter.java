@@ -2,6 +2,7 @@ package io.apitoolkit.springboot;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -9,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.assertj.core.util.Arrays;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingRequestWrapper;
