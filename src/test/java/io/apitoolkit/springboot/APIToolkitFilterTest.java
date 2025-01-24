@@ -51,6 +51,8 @@ public class APIToolkitFilterTest {
         fConf.put("apitoolkit.redactHeaders", "cookies,authorization,x-api");
         fConf.put("apitoolkit.redactRequestBody", "$.password,$.email");
         fConf.put("apitoolkit.redactResponseBody", "$.password,$.email");
+        fConf.put("apitoolkit.captureRequestBody", "true");
+        fConf.put("apitoolkit.captureResponseBody", "true");
         this.filterConfig = fConf;
     }
 

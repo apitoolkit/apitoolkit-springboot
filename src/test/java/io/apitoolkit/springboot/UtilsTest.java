@@ -20,7 +20,7 @@ public class UtilsTest {
         HashMap<String, String> result = new HashMap<>();
         List<String> redactedHeaders = Arrays.asList("Authorization");
         for (Map.Entry<String, String> header : headers.entrySet()) {
-            result.put(header.getKey(), Utils.redactHeader(header.getValue(), redactedHeaders));
+            result.put(header.getKey(), Utils.redactHeader(header.getKey(), header.getValue(), redactedHeaders));
         }
         assertEquals("[CLIENT_REDACTED]", result.get("Authorization"));
         assertEquals("application/json", result.get("Content-Type"));
@@ -62,7 +62,7 @@ public class UtilsTest {
 
         HashMap<String, String> result = new HashMap<>();
         for (Map.Entry<String, String> header : headers.entrySet()) {
-            result.put(header.getKey(), Utils.redactHeader(header.getValue(), redactedHeaders));
+            result.put(header.getKey(), Utils.redactHeader(header.getKey(), header.getValue(), redactedHeaders));
         }
 
         assertEquals("Bearer token", result.get("Authorization"));

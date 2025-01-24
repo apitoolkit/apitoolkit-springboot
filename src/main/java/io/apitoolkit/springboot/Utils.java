@@ -1,6 +1,7 @@
 package io.apitoolkit.springboot;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -36,10 +37,19 @@ public class Utils {
             String sdkType,
             String parentId) {
         try {
-
-            List<String> redactRequestBody = (List<String>) config.getOrDefault("redactRequestBody", List.of());
-            List<String> redactResponseBody = (List<String>) config.getOrDefault("redactResponseBody", List.of());
-            List<String> redactHeaders = (List<String>) config.getOrDefault("redactHeaders", List.of());
+            List<String> emptyList = new ArrayList<>();
+            List<String> redactRequestBody = (List<String>) config.getOrDefault("redactRequestBody", emptyList);
+            List<String> redactResponseBody = (List<String>) config.getOrDefault("redactResponseBody", emptyList);
+            List<String> redactHeaders = (List<String>) config.getOrDefault("redactHeaders", emptyList);
+            if (redactRequestBody == null) {
+                redactRequestBody = emptyList;
+            }
+            if (redactResponseBody == null) {
+                redactResponseBody = emptyList;
+            }
+            if (redactHeaders == null) {
+                redactHeaders = emptyList;
+            }
             Boolean debug = (Boolean) config.getOrDefault("debug", false);
             String encodedRequestBody = Base64.getEncoder()
                     .encodeToString(redactFields(reqBody, redactRequestBody, debug));
@@ -59,33 +69,32 @@ public class Utils {
             span.setAttribute("http.response.body", encodedResponseBody);
             span.setAttribute("apitoolkit.errors", GSON.toJson(errors));
             span.setAttribute("apitoolkit.service_version", (String) config.getOrDefault("serviceVersion", ""));
-            span.setAttribute("apitoolkit.tags", GSON.toJson(config.getOrDefault("tags", List.of())));
+            span.setAttribute("apitoolkit.tags", GSON.toJson(config.getOrDefault("tags", emptyList)));
 
             for (Map.Entry<String, String> header : reqHeaders.entrySet()) {
                 span.setAttribute(
                         "http.request.header." + header.getKey(),
-                        redactHeader(header.getValue(), redactHeaders));
+                        redactHeader(header.getKey(), header.getValue(), redactHeaders));
             }
 
             for (Map.Entry<String, String> header : respHeaders.entrySet()) {
                 span.setAttribute(
                         "http.response.header." + header.getKey(),
-                        redactHeader(header.getValue(), redactHeaders));
+                        redactHeader(header.getKey(), header.getValue(), redactHeaders));
             }
         } catch (Exception error) {
+            error.printStackTrace();
             span.recordException(error);
         } finally {
             span.end();
         }
     }
 
-    public static String redactHeader(String header, List<String> redactHeaders) {
-        if (redactHeaders.contains(header.toLowerCase())
-                || header.equalsIgnoreCase("cookies")
-                || header.equalsIgnoreCase("authorization")) {
+    public static String redactHeader(String header, String headerVal, List<String> redactHeaders) {
+        if (redactHeaders.contains(header) || redactHeaders.contains(header.toLowerCase())) {
             return "[CLIENT_REDACTED]";
         }
-        return header;
+        return headerVal;
     }
 
     public static byte[] redactFields(byte[] data, List<String> jsonPaths, Boolean debug) {

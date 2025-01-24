@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.assertj.core.util.Arrays;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -53,17 +54,19 @@ public class APIToolkitFilter implements Filter {
         // The @Value injection is used to set the values in the application.properties
         // file. The @Value get's inject first, so if apikey is null then we try getting
         // config from filterConfig.
+        String[] emptyList = {};
+
         String rHeaders = filterConfig.getInitParameter("apitoolkit.redactHeaders");
         this.redactHeaders = this.redactHeaders != null ? this.redactHeaders
-                : rHeaders != null ? rHeaders.split(",") : null;
+                : rHeaders != null ? rHeaders.split(",") : emptyList;
         if (this.redactRequestBody == null) {
             String req_body = filterConfig.getInitParameter("apitoolkit.redactRequestBody");
-            this.redactRequestBody = req_body != null ? req_body.split(",") : null;
+            this.redactRequestBody = req_body != null ? req_body.split(",") : emptyList;
         }
 
         if (this.redactResponseBody == null) {
             String res_body = filterConfig.getInitParameter("apitoolkit.redactResponseBody");
-            this.redactResponseBody = res_body != null ? res_body.split(",") : null;
+            this.redactResponseBody = res_body != null ? res_body.split(",") : emptyList;
         }
 
         if (this.serviceName == null) {
@@ -77,17 +80,17 @@ public class APIToolkitFilter implements Filter {
         if (this.tags == null) {
             this.tags = filterConfig.getInitParameter("apitoolkit.tags");
         }
-        if (!this.debug) {
+        if (this.debug == null) {
             this.debug = Boolean.parseBoolean(filterConfig.getInitParameter("apitoolkit.debug"));
         }
 
-        if (!this.captureRequestBody) {
+        if (this.captureRequestBody == null) {
             this.captureRequestBody = Boolean.parseBoolean(filterConfig.getInitParameter("apitoolkit.captureRequestBody"));
         }
-        if (!this.captureResponseBody) {
+        if (this.captureResponseBody == null) {
             this.captureResponseBody = Boolean.parseBoolean(filterConfig.getInitParameter("apitoolkit.captureResponseBody"));
         }
-        if (this.debug) {
+        if (this.debug == true) {
             System.out.println("Client initialized successfully");
         }
     }
@@ -117,6 +120,7 @@ public class APIToolkitFilter implements Filter {
             req.setAttribute("apitoolkit_message_id", msgId);
             chain.doFilter(requestCache, responseCache);
         } catch (Exception e) {
+            e.printStackTrace();
             statusCode = 500;
             APErrors.reportError(requestCache, e);
             throw e;
@@ -129,6 +133,7 @@ public class APIToolkitFilter implements Filter {
                 buildPayload(span, requestCache, responseCache, req_body, res_body,
                         statusCode, msgId);
             } catch (Exception e) {
+                span.end();
                 if (this.debug) {
                     e.printStackTrace();
                 }
@@ -179,9 +184,9 @@ public class APIToolkitFilter implements Filter {
         config.put("serviceVersion", this.serviceVersion);
         config.put("tags", this.tags);
         config.put("debug", this.debug);
-        config.put("redactHeaders", this.redactHeaders);
-        config.put("redactRequestBody", this.redactRequestBody);
-        config.put("redactResponseBody", this.redactResponseBody);
+        config.put("redactHeaders", Arrays.asList(this.redactHeaders));
+        config.put("redactRequestBody", Arrays.asList(this.redactRequestBody));
+        config.put("redactResponseBody", Arrays.asList(this.redactResponseBody));
 
         Utils.setApitoolkitAttributesAndEndSpan(
                 span,
