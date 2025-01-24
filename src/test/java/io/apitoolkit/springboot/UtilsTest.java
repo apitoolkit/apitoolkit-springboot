@@ -1,25 +1,27 @@
 package io.apitoolkit.springboot;
 
-import static org.junit.Assert.*;
-
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Arrays;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 public class UtilsTest {
 
     @Test
     public void testRedactHeaders() {
-        HashMap<String, Object> headers = new HashMap<>();
+        HashMap<String, String> headers = new HashMap<>();
         headers.put("Authorization", "Bearer token");
         headers.put("Content-Type", "application/json");
-
+        HashMap<String, String> result = new HashMap<>();
         List<String> redactedHeaders = Arrays.asList("Authorization");
-
-        HashMap<String, Object> result = Utils.redactHeaders(headers, redactedHeaders);
-
+        for (Map.Entry<String, String> header : headers.entrySet()) {
+            result.put(header.getKey(), Utils.redactHeader(header.getValue(), redactedHeaders));
+        }
         assertEquals("[CLIENT_REDACTED]", result.get("Authorization"));
         assertEquals("application/json", result.get("Content-Type"));
     }
@@ -31,7 +33,7 @@ public class UtilsTest {
 
         List<String> jsonPaths = Arrays.asList("$.password");
 
-        byte[] result = Utils.redactJson(jsonData, jsonPaths, false);
+        byte[] result = Utils.redactFields(jsonData, jsonPaths, false);
         String resultJson = new String(result, StandardCharsets.UTF_8);
 
         assertTrue(resultJson.contains("\"password\":\"[CLIENT_REDACTED]\""));
@@ -44,41 +46,24 @@ public class UtilsTest {
         String pattern = "/users/{userId}/orders/{orderId}";
         String path = "/users/123/orders/456";
 
-        HashMap<String, Object> result = Utils.getPathParamsFromPattern(pattern, path);
+        HashMap<String, String> result = Utils.getPathParamsFromPattern(pattern, path);
 
         assertEquals("123", result.get("userId"));
         assertEquals("456", result.get("orderId"));
     }
 
     @Test
-    public void testRedactHeadersNullHeaders() {
-        HashMap<String, Object> headers = null;
-        List<String> redactedHeaders = Arrays.asList("Authorization");
-
-        HashMap<String, Object> result = Utils.redactHeaders(headers, redactedHeaders);
-
-        assertEquals(null, result);
-    }
-
-    @Test
-    public void testRedactHeadersEmptyHeaders() {
-        HashMap<String, Object> headers = new HashMap<>();
-        List<String> redactedHeaders = Arrays.asList("Authorization");
-
-        HashMap<String, Object> result = Utils.redactHeaders(headers, redactedHeaders);
-
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
     public void testRedactHeadersEmptyRedactedHeaders() {
-        HashMap<String, Object> headers = new HashMap<>();
+        HashMap<String, String> headers = new HashMap<>();
         headers.put("Authorization", "Bearer token");
         headers.put("Content-Type", "application/json");
 
         List<String> redactedHeaders = Arrays.asList();
 
-        HashMap<String, Object> result = Utils.redactHeaders(headers, redactedHeaders);
+        HashMap<String, String> result = new HashMap<>();
+        for (Map.Entry<String, String> header : headers.entrySet()) {
+            result.put(header.getKey(), Utils.redactHeader(header.getValue(), redactedHeaders));
+        }
 
         assertEquals("Bearer token", result.get("Authorization"));
         assertEquals("application/json", result.get("Content-Type"));
@@ -89,7 +74,7 @@ public class UtilsTest {
         byte[] jsonData = new byte[0];
         List<String> jsonPaths = Arrays.asList("$.password");
 
-        byte[] result = Utils.redactJson(jsonData, jsonPaths, false);
+        byte[] result = Utils.redactFields(jsonData, jsonPaths, false);
 
         assertEquals(0, result.length);
     }
@@ -101,7 +86,7 @@ public class UtilsTest {
 
         List<String> jsonPaths = null;
 
-        byte[] result = Utils.redactJson(jsonData, jsonPaths, false);
+        byte[] result = Utils.redactFields(jsonData, jsonPaths, false);
         String resultJson = new String(result, StandardCharsets.UTF_8);
 
         assertEquals(json, resultJson);
@@ -112,7 +97,7 @@ public class UtilsTest {
         String pattern = "/users/all";
         String path = "/users/all";
 
-        HashMap<String, Object> result = Utils.getPathParamsFromPattern(pattern, path);
+        HashMap<String, String> result = Utils.getPathParamsFromPattern(pattern, path);
 
         assertTrue(result.isEmpty());
     }

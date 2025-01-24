@@ -1,27 +1,36 @@
 package io.apitoolkit.springboot;
 
-import org.junit.Before;
-import org.junit.Test;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.util.HashMap;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.mockito.Mock;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.http.MediaType;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class APIToolkitFilterTest {
+
     private HashMap<String, String> filterConfig;
 
     private APIToolkitFilter apiToolkitFilter;
@@ -42,8 +51,6 @@ public class APIToolkitFilterTest {
         fConf.put("apitoolkit.redactHeaders", "cookies,authorization,x-api");
         fConf.put("apitoolkit.redactRequestBody", "$.password,$.email");
         fConf.put("apitoolkit.redactResponseBody", "$.password,$.email");
-        fConf.put("apitoolkit.rootUrl", "https://app.apitoolkit.io");
-        fConf.put("apitoolkit.apikey", "z6EYf5FMa3gzzNUfgKZsHjtN9GLETNaev7/v0LkNozFQ89nH");
         this.filterConfig = fConf;
     }
 
@@ -88,6 +95,7 @@ public class APIToolkitFilterTest {
 
     @Controller
     private static class TestController {
+
         @GetMapping("/java-test")
         public String get(HttpServletRequest request, HttpServletResponse response) {
             assertEquals("GET", request.getMethod());
