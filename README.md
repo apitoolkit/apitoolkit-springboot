@@ -17,7 +17,7 @@ APIToolkit Springboot SKD is a middleware that can be used to monitor HTTP reque
 
 - [Installation](#installation)
 - [Setup Open Telemetry](#setup-open-telemetry)
-- [Configuration](#apitoolkit-sdk-Configuration)
+- [APItoolkit SDK Configuration](#apitoolkit-sdk-configuration)
 - [Contributing and Help](#contributing-and-help)
 - [License](#license)
 
@@ -55,7 +55,12 @@ export OTEL_RESOURCE_ATTRIBUTES=at-project-key="{ENTER_YOUR_API_KEY_HERE}" # Add
 export OTEL_EXPORTER_OTLP_PROTOCOL="grpc" #Specifies the protocol to use for the OpenTelemetry exporter.
 ```
 
-JAVA_TOOL_OPTIONS="-javaagent:PATH/TO/opentelemetry-javaagent.jar"
+> [!NOTE]
+>
+> The `{ENTER_YOUR_API_KEY_HERE}` demo string should be replaced with the [API key](https://apitoolkit.io/docs/dashboard/settings-pages/api-keys?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme) generated from the APItoolkit dashboard.
+
+<br />
+
 You can then run the application with opentelemetry instrumented using the following command:
 
 ```sh
@@ -73,12 +78,6 @@ apitoolkit.serviceName=my-service
 
 # ...
 ```
-
-> [!NOTE]
->
-> The `{ENTER_YOUR_API_KEY_HERE}` demo string should be replaced with the [API key](https://apitoolkit.io/docs/dashboard/settings-pages/api-keys?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme) generated from the APItoolkit dashboard.
-
-<br />
 
 Then, initialize the SDK like so:
 
